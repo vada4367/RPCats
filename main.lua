@@ -1,7 +1,10 @@
 local gE = require("engine")
 local Gmr = require("gamer")
+local wf = require ('windfield')
 
 function love.load()
+
+	world = wf.newWorld(0, 10000)
 	love.window.setTitle("SimpleScale Demo")
 	require "simpleScale"
 	love.graphics.setDefaultFilter("nearest","nearest")
@@ -11,19 +14,32 @@ function love.load()
 	windowWidth = 960
 	widthHeight = 540
 	fullscreen = true
-	simpleScale.setWindow(width,height,windowWidth,widthHeight, {fullscreen = fullscreen, resizable = true});
-
+	simpleScale.setWindow(width,height,windowWidth,widthHeight, {fullscreen = fullscreen, resizable = true, vsync = true});
 	function updateScale()
-		simpleScale.updateWindow(windowWidth,widthHeight, {fullscreen = fullscreen, resizable = true});
+		simpleScale.updateWindow(windowWidth,widthHeight, {fullscreen = fullscreen, resizable = true, vsync = true});
 	end
 
-	line1 = gE.Line(1, 1, 960, 540)
-	line1:init()
+	line1 = gE.Line(1, 510, 960, 510)
+
 	lines1 = {line1}
+
+	for i = 1, #lines1 do
+		lines1[i]:init()
+	end
+
+
+	rect1 = world:newBSGRectangleCollider(500, 310, 300, 200, 0)
+	rect1:setType('static')
+
+	rect2 = world:newBSGRectangleCollider(100, 300, 150, 20, 0)
+	rect2:setType('static')
 
 	player = Gmr.Gamer()
 	player:update()
-	player:init()
+	player.collider:setFixedRotation(true)
+	player.collider:setFriction(0)
+	wall = world:newLineCollider(1, 510, 960, 510)
+	wall:setType('static')
 
 	updateScale()
 end
@@ -32,64 +48,56 @@ function love.update(dt)
 	simpleScale.set()
 	simpleScale.resizeUpdate()
 
-	if love.keyboard.isDown("w") then
-		if player.y + player.sy >= 539 then
-			player.vi = -260
+
+	if love.keyboard.isDown('right') or love.keyboard.isDown('left') then
+		if love.keyboard.isDown('right') then
+			player.vx = player.vx + 20
+			player.collider:setFriction(0)
+		end
+		if love.keyboard.isDown('left') then
+			player.vx = player.vx + -20
+			player.collider:setFriction(0)
+		end
+ 	else
+		player.vx = player.vx + ((player.vx / 13) * -1)
+	end
+
+	if love.keyboard.isDown('c') then
+		player.vi = -450
+	end
+
+
+	if math.abs(player.vx) > 200 then
+		if player.vx > 0 then
+			player.vx = 200
+		else
+			player.vx = -200
 		end
 	end
-	if love.keyboard.isDown("a") then
-		player.x = player.x - 2
-	end
-	
-	if love.keyboard.isDown("d") then
-		player.x = player.x + 2
-	end
 
-	player:fall()
-
-	if player.y + player.sy >= 540 then
-		player.y = 540 - player.sy
-	end
-
-
+	world:update(dt)
+	player:move()
 	player:update()
-	player:init()
+
+
 	player:collision(lines1)
-	--love.graphics.print(player.peres[2][1] .. " " .. player.peres[2][2], 400, 400)
-	
-	--[[
-	if love.mouse.isDown(1) then
-		mouse.x, mouse.y = love.mouse.getPosition( )
-		mouse.x = mouse.x / 1.66
-		mouse.y = mouse.y / 1.66
-	end
-	if not love.mouse.isDown(1) then
-		mouse.x = nil
-		mouse.y = nil
-	end
-	]]
+
+	print(player.vi)
 
 	simpleScale.unSet()
 end
 
 function love.draw()
     simpleScale.set()
-    for i = 1, #player.peres do
-   		love.graphics.print(player.peres[i][1] .. " " .. player.peres[i][2], 400, 400 + i * 10)
-   	end
-    --[[
-    if love.mouse.isDown(1) then
-	love.graphics.print(mouse.x .. " " .. mouse.y, 100, 50)
-    	if (mouse.x < player.x + 100 and mouse.x > player.x - 100) and (mouse.y < player.y + 100 and mouse.y > player.y - 100) then
-		math.randomseed(os.time())
-        	player.x = math.random(0, 900)
-		player.y = math.random(0, 540)	
-    	end
-    end
-    ]]
-    
 
-    love.graphics.rectangle("fill", player.x, player.y, player.sx, player.sy)
-    love.graphics.line(line1.x, line1.y, line1.dx, line1.dy)
+		for i = 1, #lines1 do
+			love.graphics.line(lines1[i].x, lines1[i].y, lines1[i].dx, lines1[i].dy)
+		end
+
+		for i = 1, #player.lines do
+			love.graphics.line(player.lines[i].x, player.lines[i].y, player.lines[i].dx, player.lines[i].dy)
+		end
+
+		world:draw()
     simpleScale.unSet()
 end

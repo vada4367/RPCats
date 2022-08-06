@@ -15,14 +15,14 @@ function gE.Line(x, y, dx, dy)
         l2 = nil,
         L = nil,
         Lb = nil,
+        Pb = nil,
 
         init = function(self)
             self.vect = {dx - x, dy - y}
             if (dx - x) == 0 then
                 self.a = ((dy - y) / (dx - x + 0.01))
-            else do
+            else
                 self.a = ((dy - y) / (dx - x))
-            end
             end
             self.b = (y - (self.a*x))
         end,
@@ -52,10 +52,14 @@ function gE.mathlines(line1, line2)
     line1:mathl()
     line1:mathL()
     if line1.Lb and line2.Lb then
+        line1.Pb = true
         return true
-    else do
-        return false
-    end
+
+    else
+        if not line1.Pb then
+          line1.Pb = false
+          return false
+        end
     end
 end
 
@@ -63,7 +67,7 @@ end
 function gE.peres(line1, line2)
     local x = ((line2.b - line1.b) / (line1.a - line2.a))
     local y = ((line1.a*x) + line1.b)
-    print(x .. " " .. y)
+    return x, y
 end
 
 return gE
